@@ -10,6 +10,7 @@ app.layout = html.Div(
         html.H1("Layout Prototype"),
         """
         This is just dummy text for now
+        There will be something cool going on later!!!
         """,
     ]
 )
