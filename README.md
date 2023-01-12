@@ -41,3 +41,6 @@ application = app.server
 ```
 18. Go back into the "Web" tab, hit reload, and then try the link. 
 
+
+#### Notes
+web on pythonanywhere will not aumatically updated based on any github changes, need to pull changes for integration
