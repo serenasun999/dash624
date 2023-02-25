@@ -3,6 +3,14 @@ from dash import Dash, html, dcc
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
+import pandas as pd
+from sklearn.manifold import TSNE
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.metrics import silhouette_samples, silhouette_score
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+from sklearn.cluster import DBSCAN
+
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -13,21 +21,139 @@ def load_data(url):
     :param url: the shared url string
     :returns: a pandas dataframe
     """
-    file_id = url.split("/")[-2]
-    dwn_url = "https://drive.google.com/uc?id=" + file_id
-    df = pd.read_csv(dwn_url)
-    return df
+    # file_id = url.split("/")[-2]
+    a4_data = pd.read_csv(url)
+    # a4_data = pd.read_csv("./dataset/2023-02-08-DATA624-Assignment4-Data.csv")
+
+    # dwn_url = "https://drive.google.com/uc?id=" + file_id
+    # df = pd.read_csv(dwn_url)
+    return a4_data
 
 
-url = "***REPLACE ME WITH SHARED URL***"
-df = load_data(url)
+url = "https://raw.githubusercontent.com/serenasun999/dash624/master/dataset/2023-02-08-DATA624-Assignment4-Data.csv"
+a4_data = load_data(url)
 
-# Create our first figure
-fig = px.box(df, x="WBC", color="SepsisLabel")
+def kmeans(dataset):
+    kmeans = KMeans(
+        n_clusters = 4, # Number of clusters to find
+        init = "k-means++", # How to place the initial cluster centroids,
+        max_iter= 100, # Maximum number of iterations for the algorithm to run
+        tol=0.0001, # Roughly how much the centroids need to change between iterations to keep going
+    ).fit(
+        a4_data_df
+    )
+
+    data_kmeans =pd.concat([
+    a4_data_df,
+    pd.DataFrame(
+        kmeans.labels_,
+        columns=['cluster']
+    ).astype('category')
+    ], axis=1)
+
+    # create a color map based on unique values in 'cluster' column
+    color_map = plt.cm.get_cmap('Set1')
+    # convert 'cluster' column to a sequence of numbers
+    colors = data_kmeans['cluster'].astype('category').cat.codes
+    return color_map,colors,data_kmeans
+
+def agglomerativeClustering(dataset):
+    # In this regard, single linkage is the worst strategy, and Ward gives the most regular sizes. 
+    # However, the affinity (or distance used in clustering) cannot be varied with Ward, thus for 
+    # non Euclidean metrics, average linkage is a good alternative. Single linkage, while not robust 
+    # to noisy data, can be computed very efficiently and can therefore be useful to provide hierarchical 
+    # clustering of larger datasets. Single linkage can also perform well on non-globular data.
+
+    clusters_agg = AgglomerativeClustering(
+        n_clusters = 4, # Number of clusters to find
+        linkage="average",
+    ).fit(
+        a4_data_df
+    )
+
+    data_agg = pd.concat([
+    a4_data_df,
+    pd.DataFrame(
+        clusters_agg.labels_,
+        columns=['cluster']
+    ).astype('category')
+    ], axis=1)
+
+    # create a color map based on unique values in 'cluster' column
+    color_map = plt.cm.get_cmap('Set1')
+    # convert 'cluster' column to a sequence of numbers
+    colors = data_agg['cluster'].astype('category').cat.codes
+
+    return color_map,colors,data_agg
+# plot scatter plot with colors based on 'cluster' column
+
+def dbscan(dataset):
+    clusters = DBSCAN(
+    # eps= 0.5, # Max distance between two points to assign to same cluster 
+    eps= 2.5, # Max distance between two points to assign to same cluster 
+    # eps= 2, # Max distance between two points to assign to same cluster 
+    ).fit(
+    a4_data_df
+    )
+
+    data_dbscan = pd.concat([
+        a4_data_df,
+        pd.DataFrame(
+            clusters.labels_,
+            columns=['cluster']
+        ).astype('category')
+        ], axis=1)
+
+    # create a color map based on unique values in 'cluster' column
+    color_map = plt.cm.get_cmap('Set1')
+    # convert 'cluster' column to a sequence of numbers
+    colors = data_dbscan['cluster'].astype('category').cat.codes
+    return color_map,colors,data_dbscan
+
+
+def tsne(dataset):
+    ts = TSNE(
+        perplexity=100, # Roughly the "size" of the clusters to look for (original paper
+                    # recommends in the 5-50 range, but in general should be less than
+                    # then number of points in your dataset
+        learning_rate="auto",
+        n_iter=500,
+        init='pca',
+    ).fit_transform(a4_data_df)
+    return ts
+
+
+labels = a4_data.iloc[:,14]
+a4_data_df = a4_data.iloc[:,:13]
+a4_data_df
+
+a4_data_df = pd.concat([
+    pd.DataFrame(a4_data_df),
+    pd.DataFrame(a4_data.iloc[:,14]),
+],axis=1)
+a4_data_df.columns = [str(x) for x in a4_data_df.columns]
+last_col_name = a4_data_df.columns[-1]
+# create a dictionary of column names to rename
+new_col_names = {last_col_name: 'label'}
+# rename the columns using the rename() method
+a4_data_df = a4_data_df.rename(columns=new_col_names)
+
+color_map, colors, data_kmeans = kmeans(a4_data_df)
+fig1 = data_kmeans.plot.scatter(x='0', y='1', c=colors, cmap=color_map, marker='o',s=10, linewidths=0.5)
+
+color_map_agg, colors_agg, data_agg = agglomerativeClustering(a4_data_df)
+fig2 = data_agg.plot.scatter(x='0', y='1', c=colors_agg, cmap=color_map_agg, marker='o',s=10, linewidths=0.5)
+
+color_map_dbscan, colors_dbscan, data_dbscan = dbscan(a4_data_df)
+fig3 = data_dbscan.plot.scatter(x='0', y='1', c=colors_dbscan, cmap=color_map_dbscan, marker='o',s=10, linewidths=0.5)
+
+ts = tsne(a4_data_df)
+fig4 = plt.scatter(ts[:, 0], ts[:, 1], c=a4_data_df.label,s=10)
+
 
 # Style the figure
-fig.update_layout(
-    title="White Blood Count and Sepsis",
+fig1.update_layout(
+    title="Clustering with KMeans",
     font_size=22,
 )
 
@@ -40,7 +166,7 @@ app.layout = html.Div(
         The code shows some parameters you can manipulate, but there are lots more to try!
         """,
         dcc.Graph(
-            figure=fig,
+            figure=fig1,
             style={
                 "width": "80%",
                 "height": "70vh",
@@ -48,14 +174,21 @@ app.layout = html.Div(
             id="OurFirstFigure",
         ),
         dcc.Graph(
-            figure=fig,
+            figure=fig2,
             style={
                 "width": "100%",
                 "height": "50vh",
             },
         ),
         dcc.Graph(
-            figure=fig,
+            figure=fig3,
+            style={
+                "width": "40vh",
+                "height": "40vh",
+            },
+        ),
+        dcc.Graph(
+            figure=fig4,
             style={
                 "width": "40vh",
                 "height": "40vh",
@@ -66,3 +199,4 @@ app.layout = html.Div(
 
 if __name__ == "__main__":
     app.run_server(debug=False)
+    # kmeans(a4_data)
