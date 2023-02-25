@@ -44,19 +44,23 @@ def kmeans(dataset):
     )
 
     data_kmeans =pd.concat([
-    dataset,
-    pd.DataFrame(
-        kmeans.labels_,
-        columns=['cluster']
-    ).astype('category')
+        dataset,
+        pd.DataFrame(
+            kmeans.labels_,
+            columns=['cluster']
+        ).astype('category')
     ], axis=1)
 
-    # create a color map based on unique values in 'cluster' column
-    color_map = plt.cm.get_cmap('Set1')
-    # convert 'cluster' column to a sequence of numbers
-    colors = data_kmeans['cluster'].astype('category').cat.codes
-    fig1 = data_kmeans.plot.scatter(x='0', y='1', c=colors, cmap=color_map, marker='o',s=10, linewidths=0.5)
-
+    fig1 = px.scatter(
+        data_kmeans, 
+        x='0', 
+        y='1', 
+        color='cluster',
+        color_continuous_scale='Set1',
+        width=800,
+        height=600,
+        title='Clustering with KMeans'
+    )
     return fig1
     # return color_map,colors,data_kmeans
 
@@ -74,21 +78,25 @@ def agglomerativeClustering(dataset):
         dataset
     )
 
-    data_agg = pd.concat([
-    dataset,
-    pd.DataFrame(
-        clusters_agg.labels_,
-        columns=['cluster']
-    ).astype('category')
+    data_agg =pd.concat([
+        dataset,
+        pd.DataFrame(
+            clusters_agg.labels_,
+            columns=['cluster']
+        ).astype('category')
     ], axis=1)
 
-    # create a color map based on unique values in 'cluster' column
-    color_map = plt.cm.get_cmap('Set1')
-    # convert 'cluster' column to a sequence of numbers
-    colors = data_agg['cluster'].astype('category').cat.codes
-    fig2 = data_agg.plot.scatter(x='0', y='1', c=colors, cmap=color_map, marker='o',s=10, linewidths=0.5)
+    fig2 = px.scatter(
+        data_agg, 
+        x='0', 
+        y='1', 
+        color='cluster',
+        color_continuous_scale='Set1',
+        width=800,
+        height=600,
+        title='Clustering with AgglomerativeClustering'
+    )
     return fig2
-    # return color_map,colors,data_agg
 # plot scatter plot with colors based on 'cluster' column
 
 def dbscan(dataset):
@@ -97,24 +105,27 @@ def dbscan(dataset):
     eps= 2.5, # Max distance between two points to assign to same cluster 
     # eps= 2, # Max distance between two points to assign to same cluster 
     ).fit(
-    dataset
+        dataset
     )
 
-    data_dbscan = pd.concat([
+    data_dbscan =pd.concat([
         dataset,
         pd.DataFrame(
             clusters.labels_,
             columns=['cluster']
         ).astype('category')
-        ], axis=1)
+    ], axis=1)
 
-    # create a color map based on unique values in 'cluster' column
-    color_map = plt.cm.get_cmap('Set1')
-    # convert 'cluster' column to a sequence of numbers
-    colors = data_dbscan['cluster'].astype('category').cat.codes
-
-    fig3 = data_dbscan.plot.scatter(x='0', y='1', c=colors, cmap=color_map, marker='o',s=10, linewidths=0.5)
-
+    fig3 = px.scatter(
+        data_dbscan, 
+        x='0', 
+        y='1', 
+        color='cluster',
+        color_continuous_scale='Set1',
+        width=800,
+        height=600,
+        title='Clustering with DBSCAN'
+    )
     return fig3
     # return color_map,colors,data_dbscan
 
@@ -128,8 +139,14 @@ def tsne(dataset):
         n_iter=500,
         init='pca',
     ).fit_transform(dataset)
-    fig4 = plt.scatter(ts[:, 0], ts[:, 1], c=a4_data_df.label,s=10)
-
+    fig4 = px.scatter(
+            x=ts[:, 0],
+            y=ts[:, 1],
+            color=dataset['label'],
+            width=600,
+            height=600,
+            title='t-SNE Visualization'
+        )
     return fig4
 
 
@@ -152,24 +169,6 @@ fig1 = kmeans(a4_data_df)
 fig2 = agglomerativeClustering(a4_data_df)
 fig3 = dbscan(a4_data_df)
 fig4 = tsne(a4_data_df)
-# color_map, colors, data_kmeans = kmeans(a4_data_df)
-# fig1 = data_kmeans.plot.scatter(x='0', y='1', c=colors, cmap=color_map, marker='o',s=10, linewidths=0.5)
-
-# color_map_agg, colors_agg, data_agg = agglomerativeClustering(a4_data_df)
-# fig2 = data_agg.plot.scatter(x='0', y='1', c=colors_agg, cmap=color_map_agg, marker='o',s=10, linewidths=0.5)
-
-# color_map_dbscan, colors_dbscan, data_dbscan = dbscan(a4_data_df)
-# fig3 = data_dbscan.plot.scatter(x='0', y='1', c=colors_dbscan, cmap=color_map_dbscan, marker='o',s=10, linewidths=0.5)
-
-# ts = tsne(a4_data_df)
-# fig4 = plt.scatter(ts[:, 0], ts[:, 1], c=a4_data_df.label,s=10)
-
-
-# # Style the figure
-# fig1.update_layout(
-#     title="Clustering with KMeans",
-#     font_size=22,
-# )
 
 app.layout = html.Div(
     [
@@ -193,6 +192,8 @@ app.layout = html.Div(
                 "width": "100%",
                 "height": "50vh",
             },
+            id="OurSecondFigure",
+
         ),
         dcc.Graph(
             figure=fig3,
@@ -200,6 +201,8 @@ app.layout = html.Div(
                 "width": "40vh",
                 "height": "40vh",
             },
+            id="OurThirdFigure",
+
         ),
         dcc.Graph(
             figure=fig4,
@@ -207,6 +210,8 @@ app.layout = html.Div(
                 "width": "40vh",
                 "height": "40vh",
             },
+            id="OurFourthFigure",
+
         ),
     ]
 )
